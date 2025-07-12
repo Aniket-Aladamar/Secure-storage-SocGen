@@ -25,13 +25,13 @@ const AuditTrail = ({ file, cid }) => {
       // Fetch audit trail from the smart contract
       const auditTrail = await getFileAuditTrail(fileCid);
       
-      // Format events for display
-      const formattedEvents = auditTrail.map(event => ({
-        type: getEventTypeDisplay(event.action),
-        timestamp: event.date.toLocaleString(),
-        user: event.user,
-        action: event.action,
-        blockTime: event.timestamp
+      // Format events for display - auditTrail contains arrays of users, timestamps, and actions
+      const formattedEvents = auditTrail.users.map((user, index) => ({
+        type: getEventTypeDisplay(auditTrail.actions[index]),
+        timestamp: auditTrail.timestamps[index].toLocaleString(),
+        user: user,
+        action: auditTrail.actions[index],
+        blockTime: auditTrail.timestamps[index]
       }));
 
       setAuditEvents(formattedEvents);

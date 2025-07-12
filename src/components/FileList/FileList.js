@@ -5,7 +5,7 @@ import AuditTrail from '../AuditTrail/AuditTrail';
 import './FileList.css';
 
 const FileList = ({ files = [], type = 'own', onUpdate }) => {
-  const { fetchFileFromIPFS, shareFile, revokeAccess, deleteFile, generateFileHash } = useAppContext();
+  const { fetchFileFromIPFS, shareFile, revokeAccess, deleteFile, generateFileHash, getStoredHash } = useAppContext();
   const [viewingFile, setViewingFile] = useState(null);
   const [fileContent, setFileContent] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -654,16 +654,22 @@ const FileList = ({ files = [], type = 'own', onUpdate }) => {
                       const verifyFile = async () => {
                         try {
                           const fileHash = await generateFileHash(file);
-                          const savedKeys = JSON.parse(localStorage.getItem('savedEncryptionKeys') || '{}');
-                          const fileData = savedKeys[verifyingFile.cid];
+                          const storedHash = await getStoredHash(verifyingFile.cid);
                           
-                          if (fileData && fileData.hash) {
-                            const isValid = fileHash === fileData.hash;
+                          if (storedHash && storedHash.trim() !== '') {
+                            const isValid = fileHash === storedHash;
+                            console.log('File verification:', {
+                              fileName: file.name,
+                              fileHash,
+                              storedHash,
+                              isValid
+                            });
                             alert(isValid ? 'File integrity verified ✅' : 'File has been tampered with ❌');
                           } else {
                             alert('No stored hash found for this file. Cannot verify integrity.');
                           }
                         } catch (error) {
+                          console.error('Verification error:', error);
                           alert('Error verifying file: ' + error.message);
                         }
                       };

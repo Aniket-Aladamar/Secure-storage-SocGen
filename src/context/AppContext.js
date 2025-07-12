@@ -290,8 +290,8 @@ export const AppProvider = ({ children }) => {
       // Encrypt the CID with wallet address before storing in smart contract
       const encryptedCID = encryptCID(cid);
       
-      // Store the encrypted CID in the smart contract
-      const tx = await contract.store(encryptedCID, originalName);
+      // Store the encrypted CID with file hash in the smart contract for integrity verification
+      const tx = await contract.storeWithHash(encryptedCID, originalName, fileHash);
       
       await tx.wait();
 
@@ -318,12 +318,19 @@ export const AppProvider = ({ children }) => {
       
       const ownedFiles = [];
       for (let i = 0; i < cids.length; i++) {
+        // Get the original CID from encrypted CID mapping
+        const originalCid = localStorage.getItem(`encrypted_${cids[i]}`) || cids[i];
+        
+        // Get hash from saved encryption keys if available
+        const savedKeyData = savedEncryptionKeys[originalCid] || savedEncryptionKeys[cids[i]];
+        const fileHash = savedKeyData?.hash || null;
+        
         ownedFiles.push({
           cid: cids[i],
           name: names[i],
-          // Keep timestamps as strings to avoid overflow
           timestamp: timestamps[i].toString(),
-          peopleWithAccess: peopleWithAccessArrays[i]
+          peopleWithAccess: peopleWithAccessArrays[i],
+          hash: fileHash // Add hash for integrity verification
         });
       }
       
@@ -333,12 +340,19 @@ export const AppProvider = ({ children }) => {
       
       const sharedFilesList = [];
       for (let i = 0; i < sharedCids.length; i++) {
+        // Get the original CID from encrypted CID mapping
+        const originalCid = localStorage.getItem(`encrypted_${sharedCids[i]}`) || sharedCids[i];
+        
+        // Get hash from saved encryption keys if available
+        const savedKeyData = savedEncryptionKeys[originalCid] || savedEncryptionKeys[sharedCids[i]];
+        const fileHash = savedKeyData?.hash || null;
+        
         sharedFilesList.push({
           cid: sharedCids[i],
           name: sharedNames[i],
-          // Keep timestamps as strings to avoid overflow
           timestamp: sharedTimestamps[i].toString(),
-          owner: sharedOwners[i]
+          owner: sharedOwners[i],
+          hash: fileHash // Add hash for integrity verification
         });
       }
       
@@ -529,9 +543,13 @@ export const AppProvider = ({ children }) => {
       reader.onload = (event) => {
         try {
           const fileContent = event.target.result;
-          const hash = CryptoJS.SHA256(fileContent).toString();
+          // Convert ArrayBuffer to WordArray for CryptoJS
+          const wordArray = CryptoJS.lib.WordArray.create(fileContent);
+          const hash = CryptoJS.SHA256(wordArray).toString();
+          console.log('Generated hash for file:', file.name, 'Hash:', hash);
           resolve(hash);
         } catch (error) {
+          console.error('Error generating file hash:', error);
           reject(error);
         }
       };
@@ -564,6 +582,40 @@ export const AppProvider = ({ children }) => {
       };
     } catch (error) {
       console.error('Error verifying file integrity:', error);
+      throw error;
+    }
+  };
+
+  // Get file audit trail from blockchain
+  const getFileAuditTrail = async (cid) => {
+    try {
+      if (!contract) {
+        throw new Error('Contract not initialized');
+      }
+      
+      const result = await contract.getFileAuditTrail(cid);
+      return {
+        users: result[0],
+        timestamps: result[1].map(t => new Date(t.toNumber() * 1000)),
+        actions: result[2]
+      };
+    } catch (error) {
+      console.error('Error getting file audit trail:', error);
+      throw error;
+    }
+  };
+
+  // Get stored hash from blockchain
+  const getStoredHash = async (cid) => {
+    try {
+      if (!contract) {
+        throw new Error('Contract not initialized');
+      }
+      
+      const storedHash = await contract.getFileHash(cid);
+      return storedHash;
+    } catch (error) {
+      console.error('Error getting stored hash:', error);
       throw error;
     }
   };
@@ -614,36 +666,6 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Get audit trail for a file
-  const getFileAuditTrail = async (cid) => {
-    try {
-      if (!contract) {
-        throw new Error("Contract not initialized");
-      }
-      
-      const [users, timestamps, actions] = await contract.getFileAuditTrail(cid);
-      
-      // Format the audit trail data
-      const auditTrail = [];
-      for (let i = 0; i < users.length; i++) {
-        auditTrail.push({
-          user: users[i],
-          timestamp: timestamps[i].toNumber(),
-          action: actions[i],
-          date: new Date(timestamps[i].toNumber() * 1000)
-        });
-      }
-      
-      // Sort by timestamp (most recent first)
-      auditTrail.sort((a, b) => b.timestamp - a.timestamp);
-      
-      return auditTrail;
-    } catch (error) {
-      console.error('Error getting audit trail:', error);
-      throw error;
-    }
-  };
-
   return (
     <AppContext.Provider value={{
       isConnected,
@@ -662,7 +684,8 @@ export const AppProvider = ({ children }) => {
       verifyFileIntegrity,
       generateDigitalSignature,
       verifyDigitalSignature,
-      getFileAuditTrail
+      getFileAuditTrail,
+      getStoredHash
     }}>
       {children}
     </AppContext.Provider>

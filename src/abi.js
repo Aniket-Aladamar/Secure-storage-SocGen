@@ -262,6 +262,25 @@ export const abi = [
         "type": "string"
       }
     ],
+    "name": "getFileHash",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_cid",
+        "type": "string"
+      }
+    ],
     "name": "logFileAccess",
     "outputs": [],
     "stateMutability": "nonpayable",

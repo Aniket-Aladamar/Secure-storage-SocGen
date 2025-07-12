@@ -331,6 +331,25 @@ contract SecureIpfsStorage {
         return (users, timestamps, actions);
     }
     
+    // Function to get stored hash for a file
+    function getFileHash(string memory _cid) external view returns (string memory) {
+        // Check if caller has access to this file
+        require(accessPermissions[_cid][msg.sender], "You don't have access to this file");
+        
+        // Find the file in the owner's files
+        address owner = cidToOwner[_cid];
+        uint256 count = userFileCount[owner];
+        
+        for (uint256 i = 0; i < count; i++) {
+            FileEntry storage entry = userFiles[owner][i];
+            if (keccak256(abi.encodePacked(entry.cid)) == keccak256(abi.encodePacked(_cid))) {
+                return entry.hash;
+            }
+        }
+        
+        return ""; // Return empty string if hash not found
+    }
+    
     // Function to verify file integrity and log the verification
     function verifyFileIntegrity(string memory _cid, bool _isValid) external {
         require(accessPermissions[_cid][msg.sender], "You don't have access to this file");
