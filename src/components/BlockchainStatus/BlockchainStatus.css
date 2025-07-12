@@ -1,0 +1,163 @@
+.blockchain-status-container {
+  background: linear-gradient(135deg, #1a1f2c, #121620);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 20px 0;
+  border: 1px solid rgba(124, 138, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.status-header h3 {
+  color: #7c8aff;
+  margin: 0;
+  font-size: 20px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.status-indicator.connected {
+  background: rgba(17, 153, 142, 0.1);
+  border: 1px solid rgba(17, 153, 142, 0.3);
+  color: #11998e;
+}
+
+.status-indicator.disconnected {
+  background: rgba(203, 53, 107, 0.1);
+  border: 1px solid rgba(203, 53, 107, 0.3);
+  color: #cb356b;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 2s infinite;
+}
+
+.status-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px;
+}
+
+.status-loading .spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(124, 138, 255, 0.3);
+  border-top: 3px solid #7c8aff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+.status-loading p {
+  color: #a0a0e0;
+  font-size: 14px;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.status-card {
+  background: #13151a;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid rgba(124, 138, 255, 0.15);
+  transition: all 0.3s ease;
+}
+
+.status-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.status-card.full-width {
+  grid-column: 1 / -1;
+}
+
+.card-icon {
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+.card-content h4 {
+  margin: 0 0 8px 0;
+  color: #7c8aff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.card-value {
+  margin: 0;
+  color: #e0e0e0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.contract-address,
+.wallet-address {
+  font-family: monospace;
+  font-size: 14px;
+  word-break: break-all;
+  color: #a0a0e0;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@media (max-width: 768px) {
+  .blockchain-status-container {
+    padding: 16px;
+    margin: 16px 0;
+  }
+  
+  .status-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .status-header h3 {
+    font-size: 18px;
+  }
+  
+  .status-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .status-card {
+    padding: 16px;
+  }
+  
+  .card-value {
+    font-size: 16px;
+  }
+}
