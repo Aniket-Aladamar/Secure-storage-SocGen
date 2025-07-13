@@ -277,6 +277,25 @@ export const abi = [
     "inputs": [
       {
         "internalType": "string",
+        "name": "_encryptedCid",
+        "type": "string"
+      }
+    ],
+    "name": "getOwnerCid",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
         "name": "_cid",
         "type": "string"
       }

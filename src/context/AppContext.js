@@ -369,29 +369,32 @@ export const AppProvider = ({ children }) => {
   // Fetch a file from IPFS based on CID and decrypt it
   const fetchFileFromIPFS = async (cid, providedKey = null) => {
     try {
-      // Log file access to blockchain for audit trail
-      if (contract && userAddress) {
-        try {
-          await contract.logFileAccess(cid);
-          console.log('File access logged to blockchain');
-        } catch (error) {
-          console.warn('Failed to log file access:', error);
-          // Continue even if logging fails
-        }
-      }
-
       // First, check if the CID is encrypted (starts with U2Fsd or similar pattern used by CryptoJS)
       let actualCid = cid;
+      let originalCid = cid; // This will be used for logging access
       const isEncryptedCid = cid.startsWith('U2Fsd'); // Common prefix for CryptoJS encrypted content
       
       if (isEncryptedCid) {
         try {
           // Try to decrypt the CID with user's wallet address
           actualCid = decryptCID(cid);
+          originalCid = actualCid; // For shared files, this is the original CID that access permissions are based on
           console.log('Decrypted CID:', actualCid);
         } catch (decryptError) {
           console.error('Failed to decrypt CID:', decryptError);
           // Continue with the original CID if decryption fails
+        }
+      }
+
+      // Log file access to blockchain for audit trail - use the original CID for permissions
+      if (contract && userAddress) {
+        try {
+          const originalCidForLogging = await getOriginalCID(cid);
+          await contract.logFileAccess(originalCidForLogging);
+          console.log('File access logged to blockchain');
+        } catch (error) {
+          console.warn('Failed to log file access:', error);
+          // Continue even if logging fails
         }
       }
       
@@ -567,7 +570,9 @@ export const AppProvider = ({ children }) => {
       // Log verification to blockchain for audit trail
       if (contract && userAddress) {
         try {
-          await contract.verifyFileIntegrity(file.cid || file.name, isValid);
+          // Get the original CID for smart contract access
+          const cidToLog = await getOriginalCID(file.cid || file.name);
+          await contract.verifyFileIntegrity(cidToLog, isValid);
           console.log('File integrity verification logged to blockchain');
         } catch (error) {
           console.warn('Failed to log integrity verification:', error);
@@ -586,6 +591,36 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // Helper function to get the original CID from encrypted CID
+  const getOriginalCID = async (cid) => {
+    console.log('getOriginalCID called with:', cid);
+    
+    // If it's an encrypted CID, try to get the owner's CID from smart contract
+    if (cid.startsWith('U2Fsd') && contract) {
+      try {
+        console.log('Trying to get owner CID from contract for:', cid);
+        const ownerCid = await contract.getOwnerCid(cid);
+        console.log('Contract returned owner CID:', ownerCid);
+        if (ownerCid && ownerCid.trim() !== '') {
+          console.log('Using owner CID from contract:', ownerCid);
+          return ownerCid; // Return the owner's CID that has permissions
+        } else {
+          // If no owner CID found, this might BE the owner's CID
+          console.log('No owner CID found, assuming this is the owner\'s CID:', cid);
+          return cid; // Return the original CID as-is
+        }
+      } catch (error) {
+        console.warn('Failed to get owner CID from contract:', error);
+        // Continue with fallback - return as-is since this might be the owner's CID
+        console.log('Using original CID due to contract error:', cid);
+        return cid;
+      }
+    }
+    
+    console.log('Returning CID as-is:', cid);
+    return cid; // Return as-is if not encrypted
+  };
+
   // Get file audit trail from blockchain
   const getFileAuditTrail = async (cid) => {
     try {
@@ -593,7 +628,13 @@ export const AppProvider = ({ children }) => {
         throw new Error('Contract not initialized');
       }
       
-      const result = await contract.getFileAuditTrail(cid);
+      console.log('Getting audit trail for CID:', cid);
+      
+      // Use the helper function to get the original CID
+      const originalCid = await getOriginalCID(cid);
+      console.log('Using original CID for audit trail:', originalCid);
+      
+      const result = await contract.getFileAuditTrail(originalCid);
       return {
         users: result[0],
         timestamps: result[1].map(t => new Date(t.toNumber() * 1000)),
@@ -612,7 +653,10 @@ export const AppProvider = ({ children }) => {
         throw new Error('Contract not initialized');
       }
       
-      const storedHash = await contract.getFileHash(cid);
+      // Get the original CID for smart contract access
+      const originalCid = await getOriginalCID(cid);
+      
+      const storedHash = await contract.getFileHash(originalCid);
       return storedHash;
     } catch (error) {
       console.error('Error getting stored hash:', error);

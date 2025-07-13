@@ -22,6 +22,9 @@ contract SecureIpfsStorage {
     mapping(string => address) private cidToOwner; // Track original CID owners
     mapping(address => mapping(string => bool)) private filesSharedWithUser;
     
+    // Add mapping from any encrypted CID to the original owner's CID
+    mapping(string => string) private encryptedCidToOwnerCid;
+    
     // Add user tracking
     address[] private allUsers;
     mapping(address => bool) private isUser;
@@ -242,6 +245,9 @@ contract SecureIpfsStorage {
                 userFiles[msg.sender][i].encryptedCids[_user] = _encryptedCid;
                 accessPermissions[_cid][_user] = true;
                 filesSharedWithUser[_user][_cid] = true;
+                
+                // Store mapping from recipient's encrypted CID to owner's CID
+                encryptedCidToOwnerCid[_encryptedCid] = _cid;
 
                 // Add to audit trail
                 fileAuditTrail[_cid].push(AccessLog({
@@ -362,5 +368,10 @@ contract SecureIpfsStorage {
         }));
         
         emit FileIntegrityVerified(msg.sender, _cid, _isValid);
+    }
+
+    // Function to get the owner's CID from any encrypted CID
+    function getOwnerCid(string memory _encryptedCid) external view returns (string memory) {
+        return encryptedCidToOwnerCid[_encryptedCid];
     }
 }
