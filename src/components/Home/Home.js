@@ -225,12 +225,6 @@ const Home = () => {
                 </svg>
                 Connect Wallet to Get Started
               </button>
-              <button className="demo-btn" onClick={() => navigate('/demo')}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                </svg>
-                View Hackathon Demo
-              </button>
             </div>
           ) : (
             <div className="already-connected">
@@ -249,12 +243,6 @@ const Home = () => {
                     <path d="M9 21V9"></path>
                   </svg>
                   Go to Dashboard
-                </button>
-                <button className="demo-btn" onClick={() => navigate('/demo')}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                  </svg>
-                  Hackathon Demo
                 </button>
               </div>
             </div>
